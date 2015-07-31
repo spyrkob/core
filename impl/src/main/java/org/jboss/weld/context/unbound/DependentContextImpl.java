@@ -31,10 +31,10 @@ import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.Decorator;
 import javax.enterprise.inject.spi.Interceptor;
 
-import org.jboss.weld.bean.AbstractProducerBean;
 import org.jboss.weld.bean.ManagedBean;
 import org.jboss.weld.bean.ProducerField;
 import org.jboss.weld.bean.ProducerMethod;
+import org.jboss.weld.bean.SessionBean;
 import org.jboss.weld.context.DependentContext;
 import org.jboss.weld.context.SerializableContextualInstanceImpl;
 import org.jboss.weld.context.WeldCreationalContext;
@@ -81,6 +81,14 @@ public class DependentContextImpl implements DependentContext {
             if (contextual instanceof ManagedBean<?> && ! isInterceptorOrDecorator(contextual)) {
                 ManagedBean<?> bean = (ManagedBean<?>) contextual;
                 if (bean.getPreDestroy().isEmpty() && !bean.hasInterceptors() && bean.hasDefaultProducer()) {
+                    // there is no @PreDestroy callback to call when destroying this dependent instance
+                    // therefore, we do not need to keep the reference
+                    return;
+                }
+            }
+            if (contextual instanceof SessionBean<?> && ! isInterceptorOrDecorator(contextual)) {
+                SessionBean<?> bean = (SessionBean<?>) contextual;
+                if (bean.getPreDestroy() == null && !bean.isPassivationCapableBean() && !bean.hasInterceptors() && bean.hasDefaultProducer()) {
                     // there is no @PreDestroy callback to call when destroying this dependent instance
                     // therefore, we do not need to keep the reference
                     return;
